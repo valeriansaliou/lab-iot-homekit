@@ -10,6 +10,8 @@ All projects have the following common requirements:
  * Arduino IDE
  * An ESP32 board (mine is: `ESP32-WROOM-32`)
 
+As well, all projects are built on the top of the [HomeSpan](https://github.com/HomeSpan/HomeSpan) library.
+
 # Projects
 
 ## Sprinkler Tank Water Level
