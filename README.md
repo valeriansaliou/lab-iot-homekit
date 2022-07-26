@@ -48,6 +48,6 @@ The CAD files for the sensor casing parts are also provided in this project. The
 ### Models
 
 <p>
-  <img src="https://user-images.githubusercontent.com/1451907/180972564-fe7a846f-5d23-487b-9220-1a8b3928d7bb.png" width="420" alt="ESP32 casing" />
-  <img src="https://user-images.githubusercontent.com/1451907/180972566-39c2bb5b-f9a2-4ead-8a16-36c9cf437740.png" width="420" alt="Sensor casing" />
+  <img src="https://user-images.githubusercontent.com/1451907/180972564-fe7a846f-5d23-487b-9220-1a8b3928d7bb.png" width="400" alt="ESP32 casing" />
+  <img src="https://user-images.githubusercontent.com/1451907/180972566-39c2bb5b-f9a2-4ead-8a16-36c9cf437740.png" width="400" alt="Sensor casing" />
 <p>
