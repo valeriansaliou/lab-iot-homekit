@@ -10,7 +10,7 @@ All projects have the following common requirements:
  * Arduino IDE
  * An ESP32 board (mine is: `ESP32-WROOM-32`)
 
-As well, all projects are built on the top of the [HomeSpan](https://github.com/HomeSpan/HomeSpan) library.
+As well, all projects are built on the top of the [HomeSpan](https://github.com/HomeSpan/HomeSpan) library. Therefore, once flashed on a board, they should be connected to WiFi and paired following HomeSpan [Getting Started](https://github.com/HomeSpan/HomeSpan/blob/master/docs/GettingStarted.md) and [Command-Line Interface](https://github.com/HomeSpan/HomeSpan/blob/master/docs/CLI.md) docs.
 
 # Projects
 
