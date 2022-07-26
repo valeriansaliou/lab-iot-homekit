@@ -16,7 +16,11 @@ As well, all projects are built on the top of the [HomeSpan](https://github.com/
 
 ## Sprinkler Tank Water Level
 
+### Abstract
+
 The goal of this project is to measure the water level in a tank used for plant watering, using an ultrasonic sensor. The water level is periodically reported via a battery service to HomeKit (as there is no water level service, as of 2022).
+
+### Guidelines
 
 This project requires an HC-SR04 ultrasonic sensor to be attached to the ESP32 board, with the following pin connections:
 
@@ -34,7 +38,16 @@ The custom board that should be built follows the same schematics [as described 
 
 The CAD files for the sensor casing parts are also provided in this project. They should be 3D printed on a SLA printer (mine is: Formlabs Form 3).
 
+### Result
+
 <p>
   <img src="https://user-images.githubusercontent.com/1451907/180968484-fc47840e-9791-4bb7-8c44-35c769fafaab.png" width="240" alt="Water level sensor in the Home app" />
   <img src="https://user-images.githubusercontent.com/1451907/180968453-dfd05101-4b7c-45a8-acbc-9d36aaf2abe1.png" width="540" alt="Periodic water level reporting" />
+<p>
+
+### Models
+
+<p>
+  <img src="https://user-images.githubusercontent.com/1451907/180972564-fe7a846f-5d23-487b-9220-1a8b3928d7bb.png" width="360" alt="ESP32 casing" />
+  <img src="https://user-images.githubusercontent.com/1451907/180972566-39c2bb5b-f9a2-4ead-8a16-36c9cf437740.png" width="360" alt="Sensor casing" />
 <p>
