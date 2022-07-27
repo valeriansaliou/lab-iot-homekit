@@ -7,15 +7,15 @@ Some HomeKit-based IoT experiments. An ESP32 board is required to run the code.
 
 All projects have the following common requirements:
 
-* Arduino IDE
-* An ESP32 board (mine is: `ESP32-WROOM-32`)
+* **Arduino IDE**
+* An **ESP32 board** (mine is: `ESP32-WROOM-32`)
 
 As well, all projects are built on the top of the [HomeSpan](https://github.com/HomeSpan/HomeSpan) library. Therefore, once flashed on a board, they should be connected to WiFi and paired following HomeSpan [Getting Started](https://github.com/HomeSpan/HomeSpan/blob/master/docs/GettingStarted.md) and [Command-Line Interface](https://github.com/HomeSpan/HomeSpan/blob/master/docs/CLI.md) docs.
 
 Before any project can be compiled and flashed to an ESP32 board, you must prepare your Arduino IDE with the following:
 
-* Install the ESP32 board tools: [read Espressif tutorial](https://docs.espressif.com/projects/arduino-esp32/en/latest/installing.html)
-* Install the HomeSpan library: [read HomeSpan tutorial](https://github.com/HomeSpan/HomeSpan/blob/master/docs/GettingStarted.md)
+* **Install the ESP32 board tools**: [read Espressif tutorial](https://docs.espressif.com/projects/arduino-esp32/en/latest/installing.html)
+* **Install the HomeSpan library**: [read HomeSpan tutorial](https://github.com/HomeSpan/HomeSpan/blob/master/docs/GettingStarted.md)
 
 # Projects
 
