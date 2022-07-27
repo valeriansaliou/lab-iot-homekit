@@ -19,6 +19,18 @@ Before any project can be compiled and flashed to an ESP32 board, you must prepa
 
 # Projects
 
+## Air Conditioner Remote
+
+### Abstract
+
+The goal of this project is to convert a traditional portable air conditioning unit (that can cool and heat) into a connected AC that can be controlled from HomeKit. The AC unit was opened and the ESP32 was interfaced with the logic board using an infrared emitter.
+
+### Guidelines
+
+The retrofit performed is very simple, as no AC components have to be modified, the ESP32 is basically simulating the IR remote controller that is provided with the AC unit, emitting mocked IR signals to the IR receiver PCB contained in the AC unit.
+
+A small custom board should be built, with an IR emitter diode mounted on it, connected to the ESP32. The ESP32 manages a state machine of which state the AC unit is in, and which IR signals should be sent to change its current state to any desired state.
+
 ## Sprinkler Tank Water Level
 
 ### Abstract
