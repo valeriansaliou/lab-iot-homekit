@@ -7,10 +7,15 @@ Some HomeKit-based IoT experiments. An ESP32 board is required to run the code.
 
 All projects have the following common requirements:
 
- * Arduino IDE
- * An ESP32 board (mine is: `ESP32-WROOM-32`)
+* Arduino IDE
+* An ESP32 board (mine is: `ESP32-WROOM-32`)
 
 As well, all projects are built on the top of the [HomeSpan](https://github.com/HomeSpan/HomeSpan) library. Therefore, once flashed on a board, they should be connected to WiFi and paired following HomeSpan [Getting Started](https://github.com/HomeSpan/HomeSpan/blob/master/docs/GettingStarted.md) and [Command-Line Interface](https://github.com/HomeSpan/HomeSpan/blob/master/docs/CLI.md) docs.
+
+Before any project can be compiled and flashed to an ESP32 board, you must prepare your Arduino IDE with the following:
+
+* Install the ESP32 board tools: [read Espressif tutorial](https://docs.espressif.com/projects/arduino-esp32/en/latest/installing.html)
+* Install the HomeSpan library: [read HomeSpan tutorial](https://github.com/HomeSpan/HomeSpan/blob/master/docs/GettingStarted.md)
 
 # Projects
 
@@ -24,15 +29,15 @@ The goal of this project is to measure the water level in a tank used for plant 
 
 This project requires an HC-SR04 ultrasonic sensor to be attached to the ESP32 board, with the following pin connections:
 
-- Sensor `TRIG` to ESP32 `PIN 22`
-- Sensor `ECHO` to ESP32 `PIN 21`
-- Sensor `GND` to ESP32 `GND`
-- Sensor `VCC` to ESP32 `VCC`
+* Sensor `TRIG` to ESP32 `PIN 22`
+* Sensor `ECHO` to ESP32 `PIN 21`
+* Sensor `GND` to ESP32 `GND`
+* Sensor `VCC` to ESP32 `VCC`
 
 The following resistance values are used to obtain the `ECHO` value:
 
-- `R1` of 330 ohms
-- `R2` of 470 ohms
+* `R1` of 330 ohms
+* `R2` of 470 ohms
 
 The custom board that should be built follows the same schematics [as described here](https://tutorials-raspberrypi.com/raspberry-pi-ultrasonic-sensor-hc-sr04/).
 
