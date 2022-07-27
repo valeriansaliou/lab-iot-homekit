@@ -66,8 +66,6 @@ struct AirConditionerRemote : Service::HeaterCooler {
                      *swingMode;
 
   AirConditionerRemote() : Service::HeaterCooler() {
-    // TODO: write docs in README
-
     // Mark values as not initialized
     valuesInitialized = false;
 
