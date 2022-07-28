@@ -218,11 +218,11 @@ struct AirConditionerRemote : Service::HeaterCooler {
 
   void initializeStateMachineValues() {
     // TODO: load all values from the ROM
-    smActive = 0;
-    smTargetHeaterCoolerState = 0;
+    smActive = ACTIVE_INACTIVE;
+    smTargetHeaterCoolerState = TARGET_HEATER_COOLER_STATE_OFF;
     smCoolingThresholdTemperature = 20;
     smHeatingThresholdTemperature = 16;
-    smSwingMode = 1;
+    smSwingMode = ACTIVE_SWING_MODE_ENABLED;
   }
 
   void initializeHomeKitValues() {
