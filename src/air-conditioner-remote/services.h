@@ -8,10 +8,10 @@
 #include "DHT.h"
 #include "DHT_U.h"
 
-const int IR_PIN_PWM = 22;
+const int IR_PIN_PWM = 17;
 const int IR_ADDRESS = 0x81;
 
-const int SENSOR_TEMPERATURE_PIN = 26;
+const int SENSOR_TEMPERATURE_PIN = 23;
 const int SENSOR_TEMPERATURE_DHT_TYPE = DHT11;
 
 const int IR_COMMAND_SWITCH_POWER = 0x6B;
