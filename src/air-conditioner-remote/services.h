@@ -164,10 +164,6 @@ struct AirConditionerRemote : Service::HeaterCooler {
     if (nowMillis - lastLoopSMMillis >= delayLoopSMMillis) {
       LOG1("[Service:AirConditionerRemote] (sm) Tick in progress...\n");
 
-      // TODO: IMPORTANT, when receiving a value from HK from the user, then \
-      //   bump lastLoopSMMillis to millis() so that the SM delays itself by \
-      //   the max debounce value!
-
       // Tick a state machine task
       // Update next delay loop (still converging, or can go to sleep)
       delayLoopSMMillis = (tickTaskSM() == true) ? SM_WAKE_UP_EVERY_MILLISECONDS : SM_CONVERGE_EVERY_MILLISECONDS;
@@ -177,6 +173,22 @@ struct AirConditionerRemote : Service::HeaterCooler {
       // Mark last tick time
       lastLoopSMMillis = nowMillis;
     }
+  }
+
+  bool update() {
+    LOG1("[Service:AirConditionerRemote] (update) Requested...\n");
+
+    // Force the SM in a sleep mode, even if it was currently converging \
+    //   (debounce user interactions)
+    delayLoopSMMillis = SM_WAKE_UP_EVERY_MILLISECONDS;
+
+    // Force the SM to update later on
+    lastLoopSMMillis = millis();
+
+    LOG1("[Service:AirConditionerRemote] (update) Complete. SM will soon converge in %dms.\n", delayLoopSMMillis);
+
+    // Show update as successful
+    return true;
   }
 
   void initializeStateMachineValues() {
