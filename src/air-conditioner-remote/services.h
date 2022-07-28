@@ -83,11 +83,15 @@ unsigned int STATES_DIRECTION_TARGET_HEATER_COOLER_STATE[] = {
 };
 
 unsigned int STATES_COOLING_THRESHOLD_TEMPERATURE[] = {
-  18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32
+  RANGE_TEMPERATURE_COOL_MINIMUM,
+    19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31,
+  RANGE_TEMPERATURE_COOL_MAXIMUM
 };
 
 unsigned int STATES_HEATING_THRESHOLD_TEMPERATURE[] = {
-  13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27
+  RANGE_TEMPERATURE_HEAT_MINIMUM,
+    14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26,
+  RANGE_TEMPERATURE_HEAT_MAXIMUM
 };
 
 unsigned int STATES_SWING_MODE[] = {
@@ -100,6 +104,11 @@ const unsigned int SIZE_DIRECTION_TARGET_HEATER_COOLER_STATE = 5;
 const unsigned int SIZE_DIRECTION_COOLING_THRESHOLD_TEMPERATURE = 14;
 const unsigned int SIZE_DIRECTION_HEATING_THRESHOLD_TEMPERATURE = 14;
 const unsigned int SIZE_DIRECTION_SWING_MODE = 2;
+
+const unsigned int DEFAULT_ACTIVE = ACTIVE_INACTIVE;
+const unsigned int DEFAULT_TARGET_HEATER_COOLER_STATE = TARGET_HEATER_COOLER_STATE_OFF;
+const unsigned int DEFAULT_THRESHOLD_TEMPERATURE = 20;
+const unsigned int DEFAULT_SWING_MODE = ACTIVE_SWING_MODE_ENABLED;
 
 DHT_Unified dht(SENSOR_TEMPERATURE_PIN, SENSOR_TEMPERATURE_DHT_TYPE);
 
@@ -242,11 +251,11 @@ struct AirConditionerRemote : Service::HeaterCooler {
 
   void initializeStateMachineValues() {
     // TODO: load all values from the ROM
-    smActive = ACTIVE_INACTIVE;
-    smTargetHeaterCoolerState = TARGET_HEATER_COOLER_STATE_OFF;
-    smCoolingThresholdTemperature = 20;
-    smHeatingThresholdTemperature = 16;
-    smSwingMode = ACTIVE_SWING_MODE_ENABLED;
+    smActive = DEFAULT_ACTIVE;
+    smTargetHeaterCoolerState = DEFAULT_TARGET_HEATER_COOLER_STATE;
+    smCoolingThresholdTemperature = DEFAULT_THRESHOLD_TEMPERATURE;
+    smHeatingThresholdTemperature = DEFAULT_THRESHOLD_TEMPERATURE;
+    smSwingMode = DEFAULT_SWING_MODE;
 
     // TODO: schedule ROM saves when there are changes (de-bounced by eg. 1s)
   }
@@ -299,7 +308,7 @@ struct AirConditionerRemote : Service::HeaterCooler {
       LOG1("[Service:AirConditionerRemote] (sm : high) Active +1 (hk=%d / sm=%d)\n", hkActive->getVal(), smActive);
 
       // Update state
-      smActive = progressNextState(STATES_DIRECTION_ACTIVE, SIZE_DIRECTION_ACTIVE, smActive, 1);
+      smActive = progressNextState(STATES_DIRECTION_ACTIVE, SIZE_DIRECTION_ACTIVE, smActive, 1, true);
 
       // Send IR signal
       emitInfraRedWord(IR_COMMAND_SWITCH_POWER);
@@ -312,7 +321,7 @@ struct AirConditionerRemote : Service::HeaterCooler {
       LOG1("[Service:AirConditionerRemote] (sm : high) Mode +1 (hk=%d / sm=%d)\n", hkTargetHeaterCoolerState->getVal(), smTargetHeaterCoolerState);
 
       // Update state
-      smTargetHeaterCoolerState = progressNextState(STATES_DIRECTION_TARGET_HEATER_COOLER_STATE, SIZE_DIRECTION_TARGET_HEATER_COOLER_STATE, smTargetHeaterCoolerState, 1);
+      smTargetHeaterCoolerState = progressNextState(STATES_DIRECTION_TARGET_HEATER_COOLER_STATE, SIZE_DIRECTION_TARGET_HEATER_COOLER_STATE, smTargetHeaterCoolerState, 1, true);
 
       // Send IR signal
       emitInfraRedWord(IR_COMMAND_SWITCH_MODE);
@@ -337,7 +346,7 @@ struct AirConditionerRemote : Service::HeaterCooler {
         // Update state
         int coolingIncrement = smCoolingThresholdTemperature < hkCoolingThresholdTemperature->getVal() ? 1 : -1;
 
-        smCoolingThresholdTemperature = progressNextState(STATES_COOLING_THRESHOLD_TEMPERATURE, SIZE_DIRECTION_COOLING_THRESHOLD_TEMPERATURE, smCoolingThresholdTemperature, coolingIncrement);
+        smCoolingThresholdTemperature = progressNextState(STATES_COOLING_THRESHOLD_TEMPERATURE, SIZE_DIRECTION_COOLING_THRESHOLD_TEMPERATURE, smCoolingThresholdTemperature, coolingIncrement, false);
 
         // Send IR signal
         emitInfraRedWord(coolingIncrement > 0 ? IR_COMMAND_TEMPERATURE_INCREASE : IR_COMMAND_TEMPERATURE_DECREASE);
@@ -352,7 +361,7 @@ struct AirConditionerRemote : Service::HeaterCooler {
         // Update state
         int heatingIncrement = smHeatingThresholdTemperature < hkHeatingThresholdTemperature->getVal() ? 1 : -1;
 
-        smHeatingThresholdTemperature = progressNextState(STATES_HEATING_THRESHOLD_TEMPERATURE, SIZE_DIRECTION_HEATING_THRESHOLD_TEMPERATURE, smHeatingThresholdTemperature, heatingIncrement);
+        smHeatingThresholdTemperature = progressNextState(STATES_HEATING_THRESHOLD_TEMPERATURE, SIZE_DIRECTION_HEATING_THRESHOLD_TEMPERATURE, smHeatingThresholdTemperature, heatingIncrement, false);
 
         // Send IR signal
         emitInfraRedWord(heatingIncrement > 0 ? IR_COMMAND_TEMPERATURE_INCREASE : IR_COMMAND_TEMPERATURE_DECREASE);
@@ -367,7 +376,7 @@ struct AirConditionerRemote : Service::HeaterCooler {
         LOG1("[Service:AirConditionerRemote] (sm : low) Swing +1 (hk=%d / sm=%d)\n", hkSwingMode->getVal(), smSwingMode);
 
         // Update state
-        smSwingMode = progressNextState(STATES_SWING_MODE, SIZE_DIRECTION_SWING_MODE, smSwingMode, 1);
+        smSwingMode = progressNextState(STATES_SWING_MODE, SIZE_DIRECTION_SWING_MODE, smSwingMode, 1, true);
 
         // Send IR signal
         emitInfraRedWord(IR_COMMAND_TOGGLE_SWING);
@@ -380,7 +389,7 @@ struct AirConditionerRemote : Service::HeaterCooler {
     return true;
   }
 
-  unsigned int progressNextState(unsigned int statesCircle[], unsigned int statesCircleSize, unsigned int currentState, int increment) {
+  unsigned int progressNextState(unsigned int statesCircle[], unsigned int statesCircleSize, unsigned int currentState, int increment, bool circle) {
     // Acquire index of current state in array
     int currentStateIndex = -1;
 
@@ -405,9 +414,9 @@ struct AirConditionerRemote : Service::HeaterCooler {
     unsigned int nextStateIndex = currentStateIndex + increment;
 
     if (nextStateIndex >= statesCircleSize) {
-      nextStateIndex = 0;
+      nextStateIndex = (circle == true) ? 0 : (statesCircleSize - 1);
     } else if (nextStateIndex < 0) {
-      nextStateIndex = statesCircleSize - 1;
+      nextStateIndex = (circle == true) ? (statesCircleSize - 1) : 0;
     }
 
     return statesCircle[nextStateIndex];
