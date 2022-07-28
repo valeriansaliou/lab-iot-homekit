@@ -5,9 +5,14 @@
 // License: Mozilla Public License v2.0 (MPL v2.0)
 
 #include "IRremote.h"
+#include "DHT.h"
+#include "DHT_U.h"
 
 const int IR_PIN_PWM = 22;
 const int IR_ADDRESS = 0x81;
+
+const int SENSOR_TEMPERATURE_PIN = 26;
+const int SENSOR_TEMPERATURE_DHT_TYPE = DHT22; // DHT 22 (AM2302)
 
 const int IR_COMMAND_SWITCH_POWER = 0x6B;
 const int IR_COMMAND_SWITCH_MODE = 0x66;
@@ -96,6 +101,8 @@ const unsigned int SIZE_DIRECTION_COOLING_THRESHOLD_TEMPERATURE = 14;
 const unsigned int SIZE_DIRECTION_HEATING_THRESHOLD_TEMPERATURE = 14;
 const unsigned int SIZE_DIRECTION_SWING_MODE = 2;
 
+DHT_Unified dht(SENSOR_TEMPERATURE_PIN, SENSOR_TEMPERATURE_DHT_TYPE);
+
 struct AirConditionerRemote : Service::HeaterCooler {
   /**
     [HeaterCooler Characteristics]
@@ -174,8 +181,9 @@ struct AirConditionerRemote : Service::HeaterCooler {
     // Initialize HomeKit values (from initial SM values)
     initializeHomeKitValues();
 
-    // Configure IR
+    // Configure IR + sensors
     configureInfraRed();
+    configureSensorTemperature();
   }
 
   void loop() {
@@ -239,6 +247,8 @@ struct AirConditionerRemote : Service::HeaterCooler {
     smCoolingThresholdTemperature = 20;
     smHeatingThresholdTemperature = 16;
     smSwingMode = ACTIVE_SWING_MODE_ENABLED;
+
+    // TODO: schedule ROM saves when there are changes (de-bounced by eg. 1s)
   }
 
   void initializeHomeKitValues() {
@@ -269,10 +279,16 @@ struct AirConditionerRemote : Service::HeaterCooler {
 
   void tickTaskPoll() {
     // Acquire current values
-    // TODO: poll AC running / stopped and force update SM + HK if changed
+    int currentTemperature = acquireTemperatureValue();
 
-    // TODO: poll temperature sensor and force update HK if changed
-    hkCurrentTemperature->setVal(21);
+    if (currentTemperature >= 0) {
+      LOG1("[Service:AirConditionerRemote] (poll) Current temperature: %d°C\n", currentTemperature);
+
+      // Update temperature in HK
+      hkCurrentTemperature->setVal(currentTemperature);
+    } else {
+      LOG1("[Service:AirConditionerRemote] (poll) Error acquiring temperature! Is the sensor plugged on IO%d?\n", SENSOR_TEMPERATURE_PIN);
+    }
   }
 
   bool tickTaskSM() {
@@ -397,8 +413,29 @@ struct AirConditionerRemote : Service::HeaterCooler {
     return statesCircle[nextStateIndex];
   }
 
+  int acquireTemperatureValue() {
+    sensor_t sensor;
+
+    // Acquire temperature from sensor
+    sensors_event_t event;
+
+    dht.temperature().getSensor(&sensor);
+
+    // Invalid temperature acquired?
+    if (isnan(event.temperature) == true) {
+      return -1;
+    }
+
+    // Valid temperature acquired
+    return round(event.temperature);
+  }
+
   void configureInfraRed() {
     IrSender.begin(IR_PIN_PWM);
+  }
+
+  void configureSensorTemperature() {
+    dht.begin();
   }
 
   void emitInfraRedWord(int word) {
