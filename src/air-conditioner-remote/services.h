@@ -21,11 +21,13 @@ const unsigned int RANGE_TEMPERATURE_HEAT_MAXIMUM = 27; // 27°C
 const unsigned int RANGE_TEMPERATURE_HEAT_STEP = 1.0;
 
 enum VALUES_ACTIVE {
+  // Supported HK modes
   ACTIVE_INACTIVE = 0,
   ACTIVE_ACTIVE   = 1
 };
 
 enum VALUES_CURRENT_HEATER_COOLER_STATE {
+  // Supported HK modes
   CURRENT_HEATER_COOLER_STATE_INACTIVE = 0,
   CURRENT_HEATER_COOLER_STATE_IDLE     = 1,
   CURRENT_HEATER_COOLER_STATE_HEATING  = 2,
@@ -33,30 +35,53 @@ enum VALUES_CURRENT_HEATER_COOLER_STATE {
 };
 
 enum VALUES_TARGET_HEATER_COOLER_STATE {
+  // Supported HK modes
   TARGET_HEATER_COOLER_STATE_OFF  = 0,
   TARGET_HEATER_COOLER_STATE_HEAT = 1,
   TARGET_HEATER_COOLER_STATE_COOL = 2,
-  TARGET_HEATER_COOLER_STATE_AUTO = 3
+  TARGET_HEATER_COOLER_STATE_AUTO = 3,
+
+  // Unsupported HK modes
+  TARGET_HEATER_COOLER_STATE_UNMAPPED_1 = 4
 };
 
 enum VALUES_SWING_MODE {
+  // Supported HK modes
   ACTIVE_SWING_MODE_DISABLED = 0,
   ACTIVE_SWING_MODE_ENABLED  = 1
 };
 
-int STATES_DIRECTION_ACTIVE[] = {ACTIVE_INACTIVE, ACTIVE_ACTIVE};
-
-int STATES_DIRECTION_TARGET_HEATER_COOLER_STATE[] = {
-  TARGET_HEATER_COOLER_STATE_COOL,
-  TARGET_HEATER_COOLER_STATE_HEAT,
-  -1, // Fan mode (unsupported)
-  TARGET_HEATER_COOLER_STATE_AUTO
+unsigned int STATES_DIRECTION_ACTIVE[] = {
+  ACTIVE_INACTIVE, // 'Off' on the AC unit
+  ACTIVE_ACTIVE // 'On' on the AC unit
 };
 
-int STATES_SWING_MODE[] = {
+unsigned int STATES_DIRECTION_TARGET_HEATER_COOLER_STATE[] = {
+  TARGET_HEATER_COOLER_STATE_HEAT, // 'Heat' on the AC unit
+  TARGET_HEATER_COOLER_STATE_AUTO, // 'Cool Auto' on the AC unit
+  TARGET_HEATER_COOLER_STATE_COOL, // 'Cool' on the AC unit
+  TARGET_HEATER_COOLER_STATE_UNMAPPED_1, // 'Dry' on the AC unit
+  TARGET_HEATER_COOLER_STATE_OFF // 'Fan' on the AC unit
+};
+
+unsigned int STATES_COOLING_THRESHOLD_TEMPERATURE[] = {
+  18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32
+};
+
+unsigned int STATES_HEATING_THRESHOLD_TEMPERATURE[] = {
+  13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27
+};
+
+unsigned int STATES_SWING_MODE[] = {
   ACTIVE_SWING_MODE_DISABLED,
   ACTIVE_SWING_MODE_ENABLED
 };
+
+const unsigned int SIZE_DIRECTION_ACTIVE = 2;
+const unsigned int SIZE_DIRECTION_TARGET_HEATER_COOLER_STATE = 5;
+const unsigned int SIZE_DIRECTION_COOLING_THRESHOLD_TEMPERATURE = 14;
+const unsigned int SIZE_DIRECTION_HEATING_THRESHOLD_TEMPERATURE = 14;
+const unsigned int SIZE_DIRECTION_SWING_MODE = 2;
 
 struct AirConditionerRemote : Service::HeaterCooler {
   /**
@@ -237,7 +262,9 @@ struct AirConditionerRemote : Service::HeaterCooler {
     if (hkActive->getVal() != smActive) {
       LOG1("[Service:AirConditionerRemote] (sm : high) Active +1 (hk=%d / sm=%d)\n", hkActive->getVal(), smActive);
 
-      // TODO: acquire next state in circle
+      // Update state
+      smActive = progressNextState(STATES_DIRECTION_ACTIVE, SIZE_DIRECTION_ACTIVE, smActive, 1);
+
       // TODO: send IR signal
 
       return false;
@@ -249,7 +276,9 @@ struct AirConditionerRemote : Service::HeaterCooler {
 
       // TODO: also update hkCurrentHeaterCoolerState as we converge
 
-      // TODO: acquire next state in circle
+      // Update state
+      smTargetHeaterCoolerState = progressNextState(STATES_DIRECTION_TARGET_HEATER_COOLER_STATE, SIZE_DIRECTION_TARGET_HEATER_COOLER_STATE, smTargetHeaterCoolerState, 1);
+
       // TODO: send IR signal
 
       return false;
@@ -258,14 +287,15 @@ struct AirConditionerRemote : Service::HeaterCooler {
     if (smActive == ACTIVE_ACTIVE && smTargetHeaterCoolerState > TARGET_HEATER_COOLER_STATE_OFF) {
       // Medium-priority tasks
 
-      // TODO: what about auto? temperature can be set?!
-      //   -> TARGET_HEATER_COOLER_STATE_AUTO
-
       // [MEDIUM] Priority #1: Converge cooling temperature?
       if (smTargetHeaterCoolerState == TARGET_HEATER_COOLER_STATE_COOL && hkCoolingThresholdTemperature->getVal() != smCoolingThresholdTemperature) {
         LOG1("[Service:AirConditionerRemote] (sm : medium) Cool temperature +1 (hk=%d / sm=%d)\n", hkCoolingThresholdTemperature->getVal(), smCoolingThresholdTemperature);
 
-        // TODO: acquire next state in circle
+        // Update state
+        int coolingIncrement = smCoolingThresholdTemperature < hkCoolingThresholdTemperature->getVal() ? 1 : -1;
+
+        smCoolingThresholdTemperature = progressNextState(STATES_COOLING_THRESHOLD_TEMPERATURE, SIZE_DIRECTION_COOLING_THRESHOLD_TEMPERATURE, smCoolingThresholdTemperature, coolingIncrement);
+
         // TODO: send IR signal
 
         return false;
@@ -275,7 +305,11 @@ struct AirConditionerRemote : Service::HeaterCooler {
       if (smTargetHeaterCoolerState == TARGET_HEATER_COOLER_STATE_HEAT && hkHeatingThresholdTemperature->getVal() != smHeatingThresholdTemperature) {
         LOG1("[Service:AirConditionerRemote] (sm : medium) Heat temperature +1 (hk=%d / sm=%d)\n", hkHeatingThresholdTemperature->getVal(), smHeatingThresholdTemperature);
 
-        // TODO: acquire next state in circle
+        // Update state
+        int heatingIncrement = smHeatingThresholdTemperature < hkHeatingThresholdTemperature->getVal() ? 1 : -1;
+
+        smHeatingThresholdTemperature = progressNextState(STATES_HEATING_THRESHOLD_TEMPERATURE, SIZE_DIRECTION_HEATING_THRESHOLD_TEMPERATURE, smHeatingThresholdTemperature, heatingIncrement);
+
         // TODO: send IR signal
 
         return false;
@@ -287,7 +321,8 @@ struct AirConditionerRemote : Service::HeaterCooler {
       if (hkSwingMode->getVal() != smSwingMode) {
         LOG1("[Service:AirConditionerRemote] (sm : low) Swing +1 (hk=%d / sm=%d)\n", hkSwingMode->getVal(), smSwingMode);
 
-        // TODO
+        // Update state
+        smSwingMode = progressNextState(STATES_SWING_MODE, SIZE_DIRECTION_SWING_MODE, smSwingMode, 1);
 
         return false;
       }
@@ -297,10 +332,37 @@ struct AirConditionerRemote : Service::HeaterCooler {
     return true;
   }
 
-  int progressNextState(int statesCircle[], unsigned int currentState) {
-    // TODO
+  unsigned int progressNextState(unsigned int statesCircle[], unsigned int statesCircleSize, unsigned int currentState, int increment) {
+    // Acquire index of current state in array
+    int currentStateIndex = -1;
 
-    return -1;
+    for (int i = 0; i < statesCircleSize; i++) {
+      // Position found?
+      if (currentState == statesCircle[i]) {
+        currentStateIndex = i;
+
+        break;
+      }
+    }
+
+    // State not found? This is not expected!
+    if (currentStateIndex < 0) {
+      LOG0("[Service:AirConditionerRemote] (error) State not found in circle! This is not expected?\n");
+
+      // Fallback to first available value
+      return statesCircle[0];
+    }
+
+    // Acquire next state (index = n+1 or 0)
+    unsigned int nextStateIndex = currentStateIndex + increment;
+
+    if (nextStateIndex >= statesCircleSize) {
+      nextStateIndex = 0;
+    } else if (nextStateIndex < 0) {
+      nextStateIndex = statesCircleSize - 1;
+    }
+
+    return statesCircle[nextStateIndex];
   }
 
   void emitInfraRedWord(int word) {
