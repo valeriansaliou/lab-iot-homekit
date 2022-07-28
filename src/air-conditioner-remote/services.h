@@ -25,7 +25,7 @@ const int SM_CONVERGE_EVERY_MILLISECONDS = 500; // 1/2 seconds
 const int SM_WAKE_UP_EVERY_MILLISECONDS = 2000; // 2 seconds
 
 const unsigned int RANGE_TEMPERATURE_CURRENT_MINIMUM = 0; // 0°C
-const unsigned int RANGE_TEMPERATURE_CURRENT_MAXIMUM = 50; // 50°C
+const unsigned int RANGE_TEMPERATURE_CURRENT_MAXIMUM = 99; // 99°C
 const unsigned int RANGE_TEMPERATURE_CURRENT_STEP = 1.0;
 
 const unsigned int RANGE_TEMPERATURE_COOL_MINIMUM = 18; // 18°C
@@ -287,13 +287,13 @@ struct AirConditionerRemote : Service::HeaterCooler {
     // Acquire current values
     int currentTemperature = acquireTemperatureValue();
 
-    if (currentTemperature >= 0) {
+    if (currentTemperature >= RANGE_TEMPERATURE_CURRENT_MINIMUM && currentTemperature <= RANGE_TEMPERATURE_CURRENT_MAXIMUM) {
       LOG1("[Service:AirConditionerRemote] (poll) Current temperature: %d°C\n", currentTemperature);
 
       // Update temperature in HK
       hkCurrentTemperature->setVal(currentTemperature);
     } else {
-      LOG1("[Service:AirConditionerRemote] (poll) Error acquiring temperature! Is the sensor plugged on IO%d?\n", SENSOR_TEMPERATURE_PIN);
+      LOG1("[Service:AirConditionerRemote] (poll) Error acquiring temperature! Too high, too low or none. Is the sensor plugged on IO%d?\n", SENSOR_TEMPERATURE_PIN);
     }
   }
 
