@@ -248,11 +248,15 @@ struct AirConditionerRemote : Service::HeaterCooler {
   void forceHomeKitValuesFromStateMachine() {
     // Update with values from the SM
     hkActive->setVal(smActive);
-    hkCurrentHeaterCoolerState->setVal(0); // TODO: from smTargetHeaterCoolerState
     hkTargetHeaterCoolerState->setVal(smTargetHeaterCoolerState);
     hkCoolingThresholdTemperature->setVal(smCoolingThresholdTemperature);
     hkHeatingThresholdTemperature->setVal(smHeatingThresholdTemperature);
     hkSwingMode->setVal(smSwingMode);
+
+    // Apply current mode
+    int currentMode = convertTargetModeToCurrentMode(hkActive->getVal(), hkTargetHeaterCoolerState->getVal());
+
+    hkCurrentHeaterCoolerState->setVal(currentMode);
 
     LOG1("[Service:AirConditionerRemote] HomeKit values forced from SM:\n");
     LOG1("  - Active = %d\n", hkActive->getVal());
@@ -291,13 +295,18 @@ struct AirConditionerRemote : Service::HeaterCooler {
     if (hkTargetHeaterCoolerState->getVal() != smTargetHeaterCoolerState) {
       LOG1("[Service:AirConditionerRemote] (sm : high) Mode +1 (hk=%d / sm=%d)\n", hkTargetHeaterCoolerState->getVal(), smTargetHeaterCoolerState);
 
-      // TODO: also update hkCurrentHeaterCoolerState as we converge
-
       // Update state
       smTargetHeaterCoolerState = progressNextState(STATES_DIRECTION_TARGET_HEATER_COOLER_STATE, SIZE_DIRECTION_TARGET_HEATER_COOLER_STATE, smTargetHeaterCoolerState, 1);
 
       // Send IR signal
       emitInfraRedWord(IR_COMMAND_SWITCH_MODE);
+
+      // Force-update current mode in HK? (converged)
+      if (smTargetHeaterCoolerState == hkTargetHeaterCoolerState->getVal()) {
+        int currentMode = convertTargetModeToCurrentMode(smActive, smTargetHeaterCoolerState);
+
+        hkCurrentHeaterCoolerState->setVal(currentMode);
+      }
 
       return false;
     }
@@ -394,5 +403,21 @@ struct AirConditionerRemote : Service::HeaterCooler {
 
   void emitInfraRedWord(int word) {
     IrSender.sendNEC(IR_ADDRESS, word, 1);
+  }
+
+  int convertTargetModeToCurrentMode(int active, int targetMode) {
+    int currentMode = CURRENT_HEATER_COOLER_STATE_INACTIVE;
+
+    if (active == ACTIVE_ACTIVE) {
+      if (targetMode == TARGET_HEATER_COOLER_STATE_COOL || targetMode == TARGET_HEATER_COOLER_STATE_AUTO) {
+        currentMode = CURRENT_HEATER_COOLER_STATE_COOLING;
+      } else if (targetMode == TARGET_HEATER_COOLER_STATE_HEAT) {
+        currentMode = CURRENT_HEATER_COOLER_STATE_HEATING;
+      } else {
+        currentMode = CURRENT_HEATER_COOLER_STATE_IDLE;
+      }
+    }
+
+    return currentMode;
   }
 };
