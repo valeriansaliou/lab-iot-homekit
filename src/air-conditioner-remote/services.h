@@ -4,6 +4,19 @@
 // Copyright: 2022, Valerian Saliou <valerian@valeriansaliou.name>
 // License: Mozilla Public License v2.0 (MPL v2.0)
 
+#include "IRremote.h"
+
+const int IR_PIN_PWM = 22;
+const int IR_ADDRESS = 0x81;
+
+const int IR_COMMAND_SWITCH_POWER = 0x6B;
+const int IR_COMMAND_SWITCH_MODE = 0x66;
+const int IR_COMMAND_TOGGLE_FAN_SPEED = 0x64;
+const int IR_COMMAND_TOGGLE_SWING = 0x67;
+const int IR_COMMAND_TOGGLE_TIMER_MODE = 0x69;
+const int IR_COMMAND_TEMPERATURE_INCREASE = 0x65;
+const int IR_COMMAND_TEMPERATURE_DECREASE = 0x68;
+
 const int POLL_EVERY_MILLISECONDS = 30000; // 30 seconds
 const int SM_CONVERGE_EVERY_MILLISECONDS = 500; // 1/2 seconds
 const int SM_WAKE_UP_EVERY_MILLISECONDS = 2000; // 2 seconds
@@ -160,6 +173,9 @@ struct AirConditionerRemote : Service::HeaterCooler {
 
     // Initialize HomeKit values (from initial SM values)
     initializeHomeKitValues();
+
+    // Configure IR
+    configureInfraRed();
   }
 
   void loop() {
@@ -265,7 +281,8 @@ struct AirConditionerRemote : Service::HeaterCooler {
       // Update state
       smActive = progressNextState(STATES_DIRECTION_ACTIVE, SIZE_DIRECTION_ACTIVE, smActive, 1);
 
-      // TODO: send IR signal
+      // Send IR signal
+      emitInfraRedWord(IR_COMMAND_SWITCH_POWER);
 
       return false;
     }
@@ -279,7 +296,8 @@ struct AirConditionerRemote : Service::HeaterCooler {
       // Update state
       smTargetHeaterCoolerState = progressNextState(STATES_DIRECTION_TARGET_HEATER_COOLER_STATE, SIZE_DIRECTION_TARGET_HEATER_COOLER_STATE, smTargetHeaterCoolerState, 1);
 
-      // TODO: send IR signal
+      // Send IR signal
+      emitInfraRedWord(IR_COMMAND_SWITCH_MODE);
 
       return false;
     }
@@ -296,7 +314,8 @@ struct AirConditionerRemote : Service::HeaterCooler {
 
         smCoolingThresholdTemperature = progressNextState(STATES_COOLING_THRESHOLD_TEMPERATURE, SIZE_DIRECTION_COOLING_THRESHOLD_TEMPERATURE, smCoolingThresholdTemperature, coolingIncrement);
 
-        // TODO: send IR signal
+        // Send IR signal
+        emitInfraRedWord(coolingIncrement > 0 ? IR_COMMAND_TEMPERATURE_INCREASE : IR_COMMAND_TEMPERATURE_DECREASE);
 
         return false;
       }
@@ -310,7 +329,8 @@ struct AirConditionerRemote : Service::HeaterCooler {
 
         smHeatingThresholdTemperature = progressNextState(STATES_HEATING_THRESHOLD_TEMPERATURE, SIZE_DIRECTION_HEATING_THRESHOLD_TEMPERATURE, smHeatingThresholdTemperature, heatingIncrement);
 
-        // TODO: send IR signal
+        // Send IR signal
+        emitInfraRedWord(heatingIncrement > 0 ? IR_COMMAND_TEMPERATURE_INCREASE : IR_COMMAND_TEMPERATURE_DECREASE);
 
         return false;
       }
@@ -323,6 +343,9 @@ struct AirConditionerRemote : Service::HeaterCooler {
 
         // Update state
         smSwingMode = progressNextState(STATES_SWING_MODE, SIZE_DIRECTION_SWING_MODE, smSwingMode, 1);
+
+        // Send IR signal
+        emitInfraRedWord(IR_COMMAND_TOGGLE_SWING);
 
         return false;
       }
@@ -365,7 +388,11 @@ struct AirConditionerRemote : Service::HeaterCooler {
     return statesCircle[nextStateIndex];
   }
 
+  void configureInfraRed() {
+    IrSender.begin(IR_PIN_PWM);
+  }
+
   void emitInfraRedWord(int word) {
-    // TODO
+    IrSender.sendNEC(IR_ADDRESS, word, 1);
   }
 };
