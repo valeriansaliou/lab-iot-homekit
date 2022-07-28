@@ -5,14 +5,12 @@
 // License: Mozilla Public License v2.0 (MPL v2.0)
 
 #include "IRremote.h"
-#include "DHT.h"
-#include "DHT_U.h"
+#include "dht.h"
 
 const int IR_PIN_PWM = 17;
 const int IR_ADDRESS = 0x81;
 
 const int SENSOR_TEMPERATURE_PIN = 23;
-const int SENSOR_TEMPERATURE_DHT_TYPE = DHT11;
 
 const int IR_COMMAND_SWITCH_POWER = 0x6B;
 const int IR_COMMAND_SWITCH_MODE = 0x66;
@@ -110,7 +108,7 @@ const unsigned int DEFAULT_TARGET_HEATER_COOLER_STATE = TARGET_HEATER_COOLER_STA
 const unsigned int DEFAULT_THRESHOLD_TEMPERATURE = 20;
 const unsigned int DEFAULT_SWING_MODE = ACTIVE_SWING_MODE_ENABLED;
 
-DHT_Unified dht(SENSOR_TEMPERATURE_PIN, SENSOR_TEMPERATURE_DHT_TYPE);
+dht DHT;
 
 struct AirConditionerRemote : Service::HeaterCooler {
   /**
@@ -190,9 +188,8 @@ struct AirConditionerRemote : Service::HeaterCooler {
     // Initialize HomeKit values (from initial SM values)
     initializeHomeKitValues();
 
-    // Configure IR + sensors
+    // Configure IR
     configureInfraRed();
-    configureSensorTemperature();
   }
 
   void loop() {
@@ -423,28 +420,22 @@ struct AirConditionerRemote : Service::HeaterCooler {
   }
 
   int acquireTemperatureValue() {
-    sensor_t sensor;
+    // Read temperature on DHT sensor
+    DHT.read11(SENSOR_TEMPERATURE_PIN);
 
-    // Acquire temperature from sensor
-    sensors_event_t event;
-
-    dht.temperature().getSensor(&sensor);
+    double temperature = DHT.temperature;
 
     // Invalid temperature acquired?
-    if (isnan(event.temperature) == true) {
+    if (isnan(temperature) == true) {
       return -1;
     }
 
     // Valid temperature acquired
-    return round(event.temperature);
+    return (int)temperature;
   }
 
   void configureInfraRed() {
     IrSender.begin(IR_PIN_PWM);
-  }
-
-  void configureSensorTemperature() {
-    dht.begin();
   }
 
   void emitInfraRedWord(int word) {
