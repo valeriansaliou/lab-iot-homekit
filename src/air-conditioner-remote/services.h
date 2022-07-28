@@ -294,6 +294,9 @@ struct AirConditionerRemote : Service::HeaterCooler {
       hkCurrentTemperature->setVal(currentTemperature);
     } else {
       LOG1("[Service:AirConditionerRemote] (poll) Error acquiring temperature! Too high, too low or none. Is the sensor plugged on IO%d?\n", SENSOR_TEMPERATURE_PIN);
+
+      // Set minimum temperature in HK (to alert that something went wrong)
+      hkCurrentTemperature->setVal(RANGE_TEMPERATURE_CURRENT_MINIMUM);
     }
   }
 
