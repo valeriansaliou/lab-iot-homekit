@@ -290,12 +290,12 @@ struct AirConditionerRemote : Service::HeaterCooler {
     float currentTemperature = acquireTemperatureValue();
 
     if (currentTemperature >= RANGE_TEMPERATURE_CURRENT_MINIMUM && currentTemperature <= RANGE_TEMPERATURE_CURRENT_MAXIMUM) {
-      LOG1("[Service:AirConditionerRemote] (poll) Current temperature: %d°C\n", currentTemperature);
+      LOG1("[Service:AirConditionerRemote] (poll) Current temperature: %.2f°C\n", currentTemperature);
 
       // Update temperature in HK
       hkCurrentTemperature->setVal(currentTemperature);
     } else {
-      LOG1("[Service:AirConditionerRemote] (poll) Error acquiring temperature! Too high, too low or none. Is the sensor plugged on IO%d?\n", SENSOR_TEMPERATURE_PIN);
+      LOG1("[Service:AirConditionerRemote] (poll) Error acquiring temperature! Too high, too low or none. Is the sensor plugged on IO%d? (got value: %.2f)\n", SENSOR_TEMPERATURE_PIN, currentTemperature);
     }
   }
 
@@ -327,6 +327,7 @@ struct AirConditionerRemote : Service::HeaterCooler {
 
       // Force-update current mode in HK? (converged)
       if (smTargetHeaterCoolerState == hkTargetHeaterCoolerState->getVal()) {
+        // Apply current mode
         int currentMode = convertTargetModeToCurrentMode(smActive, smTargetHeaterCoolerState);
 
         hkCurrentHeaterCoolerState->setVal(currentMode);
