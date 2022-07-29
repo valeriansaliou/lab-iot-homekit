@@ -6,13 +6,20 @@
 
 #include "IRremote.h"
 #include "DHT.h"
+#include "EEPROM.h"
 
-const int IR_PIN_PWM = 17;
-const int IR_ADDRESS = 0x81;
+const int EEPROM_SIZE = 5;
+const int EEPROM_ADDRESS_SM_ACTIVE = 0;
+const int EEPROM_ADDRESS_SM_TARGET_HEATER_COOLER_STATE = 1;
+const int EEPROM_ADDRESS_SM_COOLING_THRESHOLD_TEMPERATURE = 2;
+const int EEPROM_ADDRESS_SM_HEATING_THRESHOLD_TEMPERATURE = 3;
+const int EEPROM_ADDRESS_SM_SWING_MODE = 4;
 
 const int SENSOR_TEMPERATURE_PIN = 23;
 const int SENSOR_TEMPERATURE_DHT_TYPE = DHT11;
 
+const int IR_PIN_PWM = 17;
+const int IR_ADDRESS = 0x81;
 const int IR_COMMAND_SWITCH_POWER = 0x6B;
 const int IR_COMMAND_SWITCH_MODE = 0x66;
 const int IR_COMMAND_TOGGLE_FAN_SPEED = 0x64;
@@ -22,6 +29,7 @@ const int IR_COMMAND_TEMPERATURE_INCREASE = 0x65;
 const int IR_COMMAND_TEMPERATURE_DECREASE = 0x68;
 
 const int POLL_EVERY_MILLISECONDS = 30000; // 30 seconds
+const int COMMIT_EVERY_MILLISECONDS = 5000; // 5 seconds
 const int SM_CONVERGE_EVERY_MILLISECONDS = 100; // 1/10 seconds
 const int SM_WAKE_UP_EVERY_MILLISECONDS = 1000; // 1 second
 
@@ -150,7 +158,10 @@ struct AirConditionerRemote : Service::HeaterCooler {
 
   unsigned int lastLoopPollMillis = 0,
                lastLoopSMMillis = 0,
+               lastLoopCommitMillis = 0,
                delayLoopSMMillis = SM_CONVERGE_EVERY_MILLISECONDS;
+
+  bool hasUncommitedEEPROMChanges = false;
 
   // HomeKit values (might be user-modified)
   SpanCharacteristic *hkActive,
@@ -169,6 +180,9 @@ struct AirConditionerRemote : Service::HeaterCooler {
                smSwingMode;
 
   AirConditionerRemote() : Service::HeaterCooler() {
+    // Configure EEPROM
+    configureEEPROM();
+
     // Configure AC unit characteristics
     hkActive = new Characteristic::Active();
     hkCurrentTemperature = new Characteristic::CurrentTemperature();
@@ -230,6 +244,19 @@ struct AirConditionerRemote : Service::HeaterCooler {
       // Mark last tick time
       lastLoopSMMillis = nowMillis;
     }
+
+    // Run commit tasks?
+    if (nowMillis - lastLoopCommitMillis >= COMMIT_EVERY_MILLISECONDS) {
+      LOG1("[Service:AirConditionerRemote] (commit) Tick in progress...\n");
+
+      // Tick a commit task
+      tickTaskCommit();
+
+      LOG1("[Service:AirConditionerRemote] (commit) Tick done, next in %dms\n", COMMIT_EVERY_MILLISECONDS);
+
+      // Mark last commit time
+      lastLoopCommitMillis = nowMillis;
+    }
   }
 
   bool update() {
@@ -249,14 +276,19 @@ struct AirConditionerRemote : Service::HeaterCooler {
   }
 
   void initializeStateMachineValues() {
-    // TODO: load all values from the ROM
-    smActive = DEFAULT_ACTIVE;
-    smTargetHeaterCoolerState = DEFAULT_TARGET_HEATER_COOLER_STATE;
-    smCoolingThresholdTemperature = DEFAULT_THRESHOLD_TEMPERATURE;
-    smHeatingThresholdTemperature = DEFAULT_THRESHOLD_TEMPERATURE;
-    smSwingMode = DEFAULT_SWING_MODE;
+    // Load all values from the ROM (or use defaults)
+    smActive = readEEPROMOrDefault(EEPROM_ADDRESS_SM_ACTIVE, DEFAULT_ACTIVE);
+    smTargetHeaterCoolerState = readEEPROMOrDefault(EEPROM_ADDRESS_SM_TARGET_HEATER_COOLER_STATE, DEFAULT_TARGET_HEATER_COOLER_STATE);
+    smCoolingThresholdTemperature = readEEPROMOrDefault(EEPROM_ADDRESS_SM_COOLING_THRESHOLD_TEMPERATURE, DEFAULT_THRESHOLD_TEMPERATURE);
+    smHeatingThresholdTemperature = readEEPROMOrDefault(EEPROM_ADDRESS_SM_HEATING_THRESHOLD_TEMPERATURE, DEFAULT_THRESHOLD_TEMPERATURE);
+    smSwingMode = readEEPROMOrDefault(EEPROM_ADDRESS_SM_SWING_MODE, DEFAULT_SWING_MODE);
 
-    // TODO: schedule ROM saves when there are changes (de-bounced by eg. 1s)
+    // TODO
+    LOG1("INIT --> smActive = %d\n", smActive);
+    LOG1("INIT --> smTargetHeaterCoolerState = %d\n", smTargetHeaterCoolerState);
+    LOG1("INIT --> smCoolingThresholdTemperature = %d\n", smCoolingThresholdTemperature);
+    LOG1("INIT --> smHeatingThresholdTemperature = %d\n", smHeatingThresholdTemperature);
+    LOG1("INIT --> smSwingMode = %d\n", smSwingMode);
   }
 
   void initializeHomeKitValues() {
@@ -285,6 +317,20 @@ struct AirConditionerRemote : Service::HeaterCooler {
     LOG1("  - Swing Mode = %d\n", hkSwingMode->getVal());
   }
 
+  void tickTaskCommit() {
+    // Should commit unsaved EEPROM changes?
+    if (hasUncommitedEEPROMChanges == true) {
+      hasUncommitedEEPROMChanges = false;
+
+      LOG1("[Service:AirConditionerRemote] (commit) Unsaved EEPROM changes, committing...\n");
+
+      // Proceed saving of EEPROM
+      EEPROM.commit();
+
+      LOG1("[Service:AirConditionerRemote] (commit) Saved EEPROM changes\n");
+    }
+  }
+
   void tickTaskPoll() {
     // Acquire current values
     float currentTemperature = acquireTemperatureValue();
@@ -309,6 +355,9 @@ struct AirConditionerRemote : Service::HeaterCooler {
       // Update state
       smActive = progressNextState(STATES_DIRECTION_ACTIVE, SIZE_DIRECTION_ACTIVE, smActive, 1, true);
 
+      // Save state
+      writeEEPROM(EEPROM_ADDRESS_SM_ACTIVE, smActive);
+
       // Send IR signal
       emitInfraRedWord(IR_COMMAND_SWITCH_POWER);
 
@@ -321,6 +370,9 @@ struct AirConditionerRemote : Service::HeaterCooler {
 
       // Update state
       smTargetHeaterCoolerState = progressNextState(STATES_DIRECTION_TARGET_HEATER_COOLER_STATE, SIZE_DIRECTION_TARGET_HEATER_COOLER_STATE, smTargetHeaterCoolerState, 1, true);
+
+      // Save state
+      writeEEPROM(EEPROM_ADDRESS_SM_TARGET_HEATER_COOLER_STATE, smTargetHeaterCoolerState);
 
       // Send IR signal
       emitInfraRedWord(IR_COMMAND_SWITCH_MODE);
@@ -348,6 +400,9 @@ struct AirConditionerRemote : Service::HeaterCooler {
 
         smCoolingThresholdTemperature = progressNextState(STATES_COOLING_THRESHOLD_TEMPERATURE, SIZE_DIRECTION_COOLING_THRESHOLD_TEMPERATURE, smCoolingThresholdTemperature, coolingIncrement, false);
 
+        // Save state
+        writeEEPROM(EEPROM_ADDRESS_SM_COOLING_THRESHOLD_TEMPERATURE, smCoolingThresholdTemperature);
+
         // Send IR signal
         emitInfraRedWord(coolingIncrement > 0 ? IR_COMMAND_TEMPERATURE_INCREASE : IR_COMMAND_TEMPERATURE_DECREASE);
 
@@ -363,6 +418,9 @@ struct AirConditionerRemote : Service::HeaterCooler {
 
         smHeatingThresholdTemperature = progressNextState(STATES_HEATING_THRESHOLD_TEMPERATURE, SIZE_DIRECTION_HEATING_THRESHOLD_TEMPERATURE, smHeatingThresholdTemperature, heatingIncrement, false);
 
+        // Save state
+        writeEEPROM(EEPROM_ADDRESS_SM_HEATING_THRESHOLD_TEMPERATURE, smHeatingThresholdTemperature);
+
         // Send IR signal
         emitInfraRedWord(heatingIncrement > 0 ? IR_COMMAND_TEMPERATURE_INCREASE : IR_COMMAND_TEMPERATURE_DECREASE);
 
@@ -377,6 +435,9 @@ struct AirConditionerRemote : Service::HeaterCooler {
 
         // Update state
         smSwingMode = progressNextState(STATES_SWING_MODE, SIZE_DIRECTION_SWING_MODE, smSwingMode, 1, true);
+
+        // Save state
+        writeEEPROM(EEPROM_ADDRESS_SM_SWING_MODE, smSwingMode);
 
         // Send IR signal
         emitInfraRedWord(IR_COMMAND_TOGGLE_SWING);
@@ -422,6 +483,10 @@ struct AirConditionerRemote : Service::HeaterCooler {
     return statesCircle[nextStateIndex];
   }
 
+  void configureEEPROM() {
+    EEPROM.begin(sizeof(int) * EEPROM_SIZE);
+  }
+
   void configureSensorTemperature() {
     dht.begin();
   }
@@ -461,5 +526,26 @@ struct AirConditionerRemote : Service::HeaterCooler {
     }
 
     return currentMode;
+  }
+
+  int readEEPROMOrDefault(int address, int defaultValue) {
+    int savedValue = EEPROM.read(address);
+
+    // Value empty? (ie. EEPROM is empty)
+    if (savedValue == 255) {
+      return defaultValue;
+    }
+
+    // Value is set (ie. EEPROM has data)
+    return savedValue;
+  }
+
+  int writeEEPROM(int address, int value) {
+    // Schedule commit + debounce next commit
+    lastLoopCommitMillis = millis();
+    hasUncommitedEEPROMChanges = true;
+
+    // Write new value
+    EEPROM.write(address, value);
   }
 };
