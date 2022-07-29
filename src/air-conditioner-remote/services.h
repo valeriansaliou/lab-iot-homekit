@@ -334,6 +334,8 @@ struct AirConditionerRemote : Service::HeaterCooler {
 
     LOG1("[Service:AirConditionerRemote] (poll) Current HomeKit values are:\n");
     logSnapshotHKValues();
+    LOG1("[Service:AirConditionerRemote] (poll) Current state machine values are:\n");
+    logSnapshotSMValues();
   }
 
   bool tickTaskSM() {
@@ -507,7 +509,7 @@ struct AirConditionerRemote : Service::HeaterCooler {
     int currentMode = CURRENT_HEATER_COOLER_STATE_INACTIVE;
 
     if (active == ACTIVE_ACTIVE) {
-      if (targetMode == TARGET_HEATER_COOLER_STATE_COOL) {
+      if (targetMode == TARGET_HEATER_COOLER_STATE_COOL || targetMode == TARGET_HEATER_COOLER_STATE_AUTO) {
         currentMode = CURRENT_HEATER_COOLER_STATE_COOLING;
       } else if (targetMode == TARGET_HEATER_COOLER_STATE_HEAT) {
         currentMode = CURRENT_HEATER_COOLER_STATE_HEATING;
@@ -546,5 +548,13 @@ struct AirConditionerRemote : Service::HeaterCooler {
     LOG1("  - Cooling Threshold Temperature = %d°C\n", hkCoolingThresholdTemperature->getVal());
     LOG1("  - Heating Threshold Temperature = %d°C\n", hkHeatingThresholdTemperature->getVal());
     LOG1("  - Swing Mode = %d\n", hkSwingMode->getVal());
+  }
+
+  void logSnapshotSMValues() {
+    LOG1("  - Active = %d\n", smActive);
+    LOG1("  - Target Heater Cooler State = %d\n", smTargetHeaterCoolerState);
+    LOG1("  - Cooling Threshold Temperature = %d°C\n", smCoolingThresholdTemperature);
+    LOG1("  - Heating Threshold Temperature = %d°C\n", smHeatingThresholdTemperature);
+    LOG1("  - Swing Mode = %d\n", smSwingMode);
   }
 };
