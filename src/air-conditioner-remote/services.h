@@ -282,13 +282,6 @@ struct AirConditionerRemote : Service::HeaterCooler {
     smCoolingThresholdTemperature = readEEPROMOrDefault(EEPROM_ADDRESS_SM_COOLING_THRESHOLD_TEMPERATURE, DEFAULT_THRESHOLD_TEMPERATURE);
     smHeatingThresholdTemperature = readEEPROMOrDefault(EEPROM_ADDRESS_SM_HEATING_THRESHOLD_TEMPERATURE, DEFAULT_THRESHOLD_TEMPERATURE);
     smSwingMode = readEEPROMOrDefault(EEPROM_ADDRESS_SM_SWING_MODE, DEFAULT_SWING_MODE);
-
-    // TODO
-    LOG1("INIT --> smActive = %d\n", smActive);
-    LOG1("INIT --> smTargetHeaterCoolerState = %d\n", smTargetHeaterCoolerState);
-    LOG1("INIT --> smCoolingThresholdTemperature = %d\n", smCoolingThresholdTemperature);
-    LOG1("INIT --> smHeatingThresholdTemperature = %d\n", smHeatingThresholdTemperature);
-    LOG1("INIT --> smSwingMode = %d\n", smSwingMode);
   }
 
   void initializeHomeKitValues() {
@@ -528,8 +521,8 @@ struct AirConditionerRemote : Service::HeaterCooler {
     return currentMode;
   }
 
-  int readEEPROMOrDefault(int address, int defaultValue) {
-    int savedValue = EEPROM.read(address);
+  unsigned int readEEPROMOrDefault(int address, unsigned int defaultValue) {
+    unsigned int savedValue = EEPROM.read(address);
 
     // Value empty? (ie. EEPROM is empty)
     if (savedValue == 255) {
@@ -540,7 +533,7 @@ struct AirConditionerRemote : Service::HeaterCooler {
     return savedValue;
   }
 
-  int writeEEPROM(int address, int value) {
+  void writeEEPROM(int address, unsigned int value) {
     // Schedule commit + debounce next commit
     lastLoopCommitMillis = millis();
     hasUncommitedEEPROMChanges = true;
