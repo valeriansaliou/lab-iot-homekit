@@ -214,7 +214,7 @@ struct AirConditionerRemote : Service::HeaterCooler {
     unsigned int nowMillis = millis();
 
     // Run poll tasks?
-    if (nowMillis - lastLoopPollMillis >= POLL_EVERY_MILLISECONDS) {
+    if ((nowMillis - lastLoopPollMillis) >= POLL_EVERY_MILLISECONDS) {
       LOG1("[Service:AirConditionerRemote] (poll) Tick in progress...\n");
 
       // Tick a poll task
@@ -232,7 +232,7 @@ struct AirConditionerRemote : Service::HeaterCooler {
     //   to the desired configured value. This effectively acts as a debounce, \
     //   as the user may change the value multiple times before settling on \
     //   the final desired value.
-    if (nowMillis - lastLoopSMMillis >= delayLoopSMMillis) {
+    if ((nowMillis - lastLoopSMMillis) >= delayLoopSMMillis) {
       LOG1("[Service:AirConditionerRemote] (sm) Tick in progress...\n");
 
       // Tick a state machine task
@@ -246,7 +246,7 @@ struct AirConditionerRemote : Service::HeaterCooler {
     }
 
     // Run commit tasks?
-    if (nowMillis - lastLoopCommitMillis >= COMMIT_EVERY_MILLISECONDS) {
+    if ((nowMillis - lastLoopCommitMillis) >= COMMIT_EVERY_MILLISECONDS) {
       LOG1("[Service:AirConditionerRemote] (commit) Tick in progress...\n");
 
       // Tick a commit task
