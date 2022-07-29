@@ -302,12 +302,7 @@ struct AirConditionerRemote : Service::HeaterCooler {
     hkCurrentHeaterCoolerState->setVal(currentMode);
 
     LOG1("[Service:AirConditionerRemote] HomeKit values forced from SM:\n");
-    LOG1("  - Active = %d\n", hkActive->getVal());
-    LOG1("  - Current Heater Cooler State = %d\n", hkCurrentHeaterCoolerState->getVal());
-    LOG1("  - Target Heater Cooler State = %d\n", hkTargetHeaterCoolerState->getVal());
-    LOG1("  - Cooling Threshold Temperature = %d°C\n", hkCoolingThresholdTemperature->getVal());
-    LOG1("  - Heating Threshold Temperature = %d°C\n", hkHeatingThresholdTemperature->getVal());
-    LOG1("  - Swing Mode = %d\n", hkSwingMode->getVal());
+    logSnapshotHKValues();
   }
 
   void tickTaskCommit() {
@@ -336,6 +331,9 @@ struct AirConditionerRemote : Service::HeaterCooler {
     } else {
       LOG0("[Service:AirConditionerRemote] (poll) Error acquiring temperature! Too high, too low or none. Is the sensor plugged on IO%d? (got value: %.2f)\n", SENSOR_TEMPERATURE_PIN, currentTemperature);
     }
+
+    LOG1("[Service:AirConditionerRemote] (poll) Current HomeKit values are:\n");
+    logSnapshotHKValues();
   }
 
   bool tickTaskSM() {
@@ -539,5 +537,14 @@ struct AirConditionerRemote : Service::HeaterCooler {
 
     // Write new value
     EEPROM.write(address, value);
+  }
+
+  void logSnapshotHKValues() {
+    LOG1("  - Active = %d\n", hkActive->getVal());
+    LOG1("  - Current Heater Cooler State = %d\n", hkCurrentHeaterCoolerState->getVal());
+    LOG1("  - Target Heater Cooler State = %d\n", hkTargetHeaterCoolerState->getVal());
+    LOG1("  - Cooling Threshold Temperature = %d°C\n", hkCoolingThresholdTemperature->getVal());
+    LOG1("  - Heating Threshold Temperature = %d°C\n", hkHeatingThresholdTemperature->getVal());
+    LOG1("  - Swing Mode = %d\n", hkSwingMode->getVal());
   }
 };
