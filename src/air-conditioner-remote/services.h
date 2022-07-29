@@ -28,6 +28,7 @@ const int IR_COMMAND_TOGGLE_TIMER_MODE = 0x69;
 const int IR_COMMAND_TEMPERATURE_INCREASE = 0x65;
 const int IR_COMMAND_TEMPERATURE_DECREASE = 0x68;
 
+const int INITIALIZE_HOLD_MILLISECONDS = 500; // 1/2 second
 const int POLL_EVERY_MILLISECONDS = 30000; // 30 seconds
 const int COMMIT_EVERY_MILLISECONDS = 5000; // 5 seconds
 const int SM_CONVERGE_EVERY_MILLISECONDS = 100; // 1/10 second
@@ -203,6 +204,9 @@ struct AirConditionerRemote : Service::HeaterCooler {
     //   SM values)
     initializeStateMachineValues();
     initializeHomeKitValues();
+
+    // Hold for some time before everything is ready (eg. temperature sensor)
+    delay(INITIALIZE_HOLD_MILLISECONDS);
   }
 
   void loop() {
