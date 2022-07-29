@@ -25,8 +25,8 @@ const int POLL_EVERY_MILLISECONDS = 30000; // 30 seconds
 const int SM_CONVERGE_EVERY_MILLISECONDS = 500; // 1/2 seconds
 const int SM_WAKE_UP_EVERY_MILLISECONDS = 2000; // 2 seconds
 
-const unsigned int RANGE_TEMPERATURE_CURRENT_MINIMUM = 0; // 0°C
-const unsigned int RANGE_TEMPERATURE_CURRENT_MAXIMUM = 99; // 99°C
+const float RANGE_TEMPERATURE_CURRENT_MINIMUM = 0.0; // 0.0°C
+const float RANGE_TEMPERATURE_CURRENT_MAXIMUM = 0.0; // 99.0°C
 const unsigned int RANGE_TEMPERATURE_CURRENT_STEP = 1.0;
 
 const unsigned int RANGE_TEMPERATURE_COOL_MINIMUM = 18; // 18°C
@@ -287,7 +287,7 @@ struct AirConditionerRemote : Service::HeaterCooler {
 
   void tickTaskPoll() {
     // Acquire current values
-    int currentTemperature = acquireTemperatureValue();
+    float currentTemperature = acquireTemperatureValue();
 
     if (currentTemperature >= RANGE_TEMPERATURE_CURRENT_MINIMUM && currentTemperature <= RANGE_TEMPERATURE_CURRENT_MAXIMUM) {
       LOG1("[Service:AirConditionerRemote] (poll) Current temperature: %d°C\n", currentTemperature);
@@ -429,17 +429,17 @@ struct AirConditionerRemote : Service::HeaterCooler {
     IrSender.begin(IR_PIN_PWM);
   }
 
-  int acquireTemperatureValue() {
+  float acquireTemperatureValue() {
     // Read temperature on DHT sensor
     float temperature = dht.readTemperature();
 
     // Invalid temperature acquired?
     if (isnan(temperature) == true) {
-      return -1;
+      return -1.0;
     }
 
     // Valid temperature acquired
-    return (int)temperature;
+    return temperature;
   }
 
   void emitInfraRedWord(int word) {
