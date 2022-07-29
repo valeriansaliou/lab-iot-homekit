@@ -215,12 +215,12 @@ struct AirConditionerRemote : Service::HeaterCooler {
 
     // Run poll tasks?
     if ((nowMillis - lastLoopPollMillis) >= POLL_EVERY_MILLISECONDS) {
-      LOG1("[Service:AirConditionerRemote] (poll) Tick in progress...\n");
+      LOG2("[Service:AirConditionerRemote] (poll) Tick in progress...\n");
 
       // Tick a poll task
       tickTaskPoll();
 
-      LOG1("[Service:AirConditionerRemote] (poll) Tick done, next in %dms\n", POLL_EVERY_MILLISECONDS);
+      LOG2("[Service:AirConditionerRemote] (poll) Tick done, next in %dms\n", POLL_EVERY_MILLISECONDS);
 
       // Mark last poll time
       lastLoopPollMillis = nowMillis;
@@ -233,13 +233,13 @@ struct AirConditionerRemote : Service::HeaterCooler {
     //   as the user may change the value multiple times before settling on \
     //   the final desired value.
     if ((nowMillis - lastLoopSMMillis) >= delayLoopSMMillis) {
-      LOG1("[Service:AirConditionerRemote] (sm) Tick in progress...\n");
+      LOG2("[Service:AirConditionerRemote] (sm) Tick in progress...\n");
 
       // Tick a state machine task
       // Update next delay loop (still converging, or can go to sleep)
       delayLoopSMMillis = (tickTaskSM() == true) ? SM_WAKE_UP_EVERY_MILLISECONDS : SM_CONVERGE_EVERY_MILLISECONDS;
 
-      LOG1("[Service:AirConditionerRemote] (sm) Tick done, next in %dms\n", delayLoopSMMillis);
+      LOG2("[Service:AirConditionerRemote] (sm) Tick done, next in %dms\n", delayLoopSMMillis);
 
       // Mark last tick time
       lastLoopSMMillis = nowMillis;
@@ -247,12 +247,12 @@ struct AirConditionerRemote : Service::HeaterCooler {
 
     // Run commit tasks?
     if ((nowMillis - lastLoopCommitMillis) >= COMMIT_EVERY_MILLISECONDS) {
-      LOG1("[Service:AirConditionerRemote] (commit) Tick in progress...\n");
+      LOG2("[Service:AirConditionerRemote] (commit) Tick in progress...\n");
 
       // Tick a commit task
       tickTaskCommit();
 
-      LOG1("[Service:AirConditionerRemote] (commit) Tick done, next in %dms\n", COMMIT_EVERY_MILLISECONDS);
+      LOG2("[Service:AirConditionerRemote] (commit) Tick done, next in %dms\n", COMMIT_EVERY_MILLISECONDS);
 
       // Mark last commit time
       lastLoopCommitMillis = nowMillis;
@@ -534,8 +534,7 @@ struct AirConditionerRemote : Service::HeaterCooler {
   }
 
   void writeEEPROM(int address, unsigned int value) {
-    // Schedule commit + debounce next commit
-    lastLoopCommitMillis = millis();
+    // Schedule commit
     hasUncommitedEEPROMChanges = true;
 
     // Write new value
