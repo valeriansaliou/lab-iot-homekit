@@ -29,7 +29,13 @@ The goal of this project is to convert a traditional portable air conditioning u
 
 The retrofit performed is very simple, as no AC components have to be modified, the ESP32 is basically simulating the IR remote controller that is provided with the AC unit, emitting mocked IR signals to the IR receiver PCB contained in the AC unit.
 
-A small custom board should be built, with an IR emitter diode mounted on it, connected to the ESP32. The ESP32 manages a state machine of which state the AC unit is in, and which IR signals should be sent to change its current state to any desired state.
+A small custom board should be built, with an IR emitter diode mounted on it, connected to the ESP32. The ESP32 manages a state machine of which state the AC unit is in, and which IR signals should be sent to change its current state to any desired state. The temperature sensor used is a DHT11.
+
+The following libraries are being used, and should be installed from the Arduino IDE:
+
+* `IRremote` ([library here](https://github.com/Arduino-IRremote/Arduino-IRremote))
+* `DHT Sensor Library` from Adafruit ([library here](https://github.com/adafruit/DHT-sensor-library))
+* `EEPROM`
 
 ## Sprinkler Tank Water Level
 
