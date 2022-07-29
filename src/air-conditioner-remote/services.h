@@ -531,7 +531,8 @@ struct AirConditionerRemote : Service::HeaterCooler {
   }
 
   void writeEEPROM(int address, unsigned int value) {
-    // Schedule commit
+    // Force the SM to update later on + schedule commit
+    lastLoopCommitMillis = millis();
     hasUncommitedEEPROMChanges = true;
 
     // Write new value
