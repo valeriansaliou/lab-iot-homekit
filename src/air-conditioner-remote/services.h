@@ -260,7 +260,7 @@ struct AirConditionerRemote : Service::HeaterCooler {
   }
 
   bool update() {
-    LOG1("[Service:AirConditionerRemote] (update) Requested...\n");
+    LOG2("[Service:AirConditionerRemote] (update) Requested...\n");
 
     // Force the SM in a sleep mode, even if it was currently converging \
     //   (debounce user interactions)
@@ -315,7 +315,7 @@ struct AirConditionerRemote : Service::HeaterCooler {
     if (hasUncommitedEEPROMChanges == true) {
       hasUncommitedEEPROMChanges = false;
 
-      LOG1("[Service:AirConditionerRemote] (commit) Unsaved EEPROM changes, committing...\n");
+      LOG2("[Service:AirConditionerRemote] (commit) Unsaved EEPROM changes, committing...\n");
 
       // Proceed saving of EEPROM
       EEPROM.commit();
@@ -334,7 +334,7 @@ struct AirConditionerRemote : Service::HeaterCooler {
       // Update temperature in HK
       hkCurrentTemperature->setVal(currentTemperature);
     } else {
-      LOG1("[Service:AirConditionerRemote] (poll) Error acquiring temperature! Too high, too low or none. Is the sensor plugged on IO%d? (got value: %.2f)\n", SENSOR_TEMPERATURE_PIN, currentTemperature);
+      LOG0("[Service:AirConditionerRemote] (poll) Error acquiring temperature! Too high, too low or none. Is the sensor plugged on IO%d? (got value: %.2f)\n", SENSOR_TEMPERATURE_PIN, currentTemperature);
     }
   }
 
