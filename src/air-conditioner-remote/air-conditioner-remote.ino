@@ -17,7 +17,7 @@ void setup() {
   // Setup HomeSpan accessory
   homeSpan.begin(Category::AirConditioners, "Air Conditioner", "vsa-industries", "VSA-AC");
   
-  homeSpan.setLogLevel(2);
+  homeSpan.setLogLevel(1);
 
   // QR Code ID and Pairing codes are used for the HomeKit QR Code
   homeSpan.setQRID("VSAC");
