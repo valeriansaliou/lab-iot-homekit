@@ -30,7 +30,7 @@ const int IR_COMMAND_TEMPERATURE_DECREASE = 0x68;
 
 const int POLL_EVERY_MILLISECONDS = 30000; // 30 seconds
 const int COMMIT_EVERY_MILLISECONDS = 5000; // 5 seconds
-const int SM_CONVERGE_EVERY_MILLISECONDS = 500; // 1/2 second
+const int SM_CONVERGE_EVERY_MILLISECONDS = 100; // 1/10 second
 const int SM_WAKE_UP_EVERY_MILLISECONDS = 2000; // 2 seconds
 
 const float RANGE_TEMPERATURE_CURRENT_MINIMUM = 0.0; // 0.0°C
@@ -180,8 +180,10 @@ struct AirConditionerRemote : Service::HeaterCooler {
                smSwingMode;
 
   AirConditionerRemote() : Service::HeaterCooler() {
-    // Configure EEPROM
+    // Configure all dependencies
     configureEEPROM();
+    configureInfraRed();
+    configureSensorTemperature();
 
     // Configure AC unit characteristics
     hkActive = new Characteristic::Active();
@@ -197,15 +199,10 @@ struct AirConditionerRemote : Service::HeaterCooler {
     hkCoolingThresholdTemperature->setRange(RANGE_TEMPERATURE_COOL_MINIMUM, RANGE_TEMPERATURE_COOL_MAXIMUM, RANGE_TEMPERATURE_COOL_STEP);
     hkHeatingThresholdTemperature->setRange(RANGE_TEMPERATURE_HEAT_MINIMUM, RANGE_TEMPERATURE_HEAT_MAXIMUM, RANGE_TEMPERATURE_HEAT_STEP);
 
-    // Initialize the state machine values
+    // Initialize the state machine values + HomeKit values (from initial \
+    //   SM values)
     initializeStateMachineValues();
-
-    // Initialize HomeKit values (from initial SM values)
     initializeHomeKitValues();
-
-    // Configure IR + sensors
-    configureInfraRed();
-    configureSensorTemperature();
   }
 
   void loop() {
