@@ -105,7 +105,7 @@ const unsigned int SIZE_DIRECTION_HEATING_THRESHOLD_TEMPERATURE = 14;
 const unsigned int SIZE_DIRECTION_SWING_MODE = 2;
 
 const unsigned int DEFAULT_ACTIVE = ACTIVE_INACTIVE;
-const unsigned int DEFAULT_TARGET_HEATER_COOLER_STATE = TARGET_HEATER_COOLER_STATE_AUTO;
+const unsigned int DEFAULT_TARGET_HEATER_COOLER_STATE = TARGET_HEATER_COOLER_STATE_COOL;
 const unsigned int DEFAULT_THRESHOLD_TEMPERATURE = 18;
 const unsigned int DEFAULT_SWING_MODE = ACTIVE_SWING_MODE_ENABLED;
 
@@ -451,7 +451,7 @@ struct AirConditionerRemote : Service::HeaterCooler {
     int currentMode = CURRENT_HEATER_COOLER_STATE_INACTIVE;
 
     if (active == ACTIVE_ACTIVE) {
-      if (targetMode == TARGET_HEATER_COOLER_STATE_COOL || targetMode == TARGET_HEATER_COOLER_STATE_AUTO) {
+      if (targetMode == TARGET_HEATER_COOLER_STATE_COOL) {
         currentMode = CURRENT_HEATER_COOLER_STATE_COOLING;
       } else if (targetMode == TARGET_HEATER_COOLER_STATE_HEAT) {
         currentMode = CURRENT_HEATER_COOLER_STATE_HEATING;
